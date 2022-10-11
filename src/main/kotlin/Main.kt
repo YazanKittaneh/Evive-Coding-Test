@@ -1,4 +1,12 @@
 class Order() {
+    /**
+     * Todo: Clean up helper functions
+     * Todo: Extract repeated logic from Breakfast, Lunch, and Dinner functions
+     * Todo: Clean OrderUp Function
+     * Todo: Create global stack for better terminal printing logic
+     * Todo: Add continuous user input
+     */
+
     fun main(args: Array<String>) {
         orderUp("Breakfast 1,2,3")
     }
@@ -32,9 +40,7 @@ class Order() {
         }
     }
 
-    /**
-     * All order validation will be migrated to this function to keep other functions DRY
-     */
+    /** All order validation will be migrated to this function to keep other functions DRY */
     fun validateOrder(menu: String, orderCounter: List<Int>): Int {
         var errorStack: ArrayList<String> = arrayListOf()
 
@@ -62,7 +68,7 @@ class Order() {
         return errorStack.size
     }
 
-    //create counter helper function
+    /** Helper function that formats the order into an itemized list to make it easier to parse **/
     fun createOrderCount(order: List<Int>): ArrayList<Int> {
         val orderCounter: ArrayList<Int> = arrayListOf(0, 0, 0, 0) //Main, sides, drinks, desert
         for (n in order) {
@@ -79,6 +85,7 @@ class Order() {
         return orderCounter
     }
 
+    /** Breakfast Logic **/
     fun breakfast(order: ArrayList<Int>) {
         val breakfastMenu: Array<String> = arrayOf("Eggs", "Toast", "Coffee")
 
@@ -91,9 +98,9 @@ class Order() {
         }
 
         println("Final Order: $stack")
-
     }
 
+    /** Lunch Logic **/
     fun lunch(order: ArrayList<Int>) {
         //Sandwich, Chips, Soda
         //At lunch, multiple sides can be ordered
@@ -112,6 +119,8 @@ class Order() {
         println("Final Order: $stack")
     }
 
+
+    /** Dinner Logic **/
     fun dinner(order: ArrayList<Int>) {
         //Steak, Potatoes, Wine, Water, Cake
         //At dinner, dessert must be ordered
