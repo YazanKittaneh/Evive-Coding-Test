@@ -1,76 +1,60 @@
-class Order() {
-    /**
-     * Todo: Clean up helper functions
-     * Todo: Extract repeated logic from Breakfast, Lunch, and Dinner functions
-     * Todo: Clean OrderUp Function
-     * Todo: Create global stack for better terminal printing logic
-     * Todo: Add continuous user input
-     */
-
-    fun main(args: Array<String>) {
-        orderUp("Breakfast 1,2,3")
+fun main(args: Array<String>) {
+    while(true) {
+        val order = readLine()!!
+        val table = Restaurant()
+        table.waiter(order)
+        table.getReceipt(order)
     }
+}
 
-    fun orderUp(input: String) {
-        println("")
-        println("In: ${input}")
-        val splitInput = input.split(" ")
+
+class Restaurant() {
+    val breakfastMenu: Array<String> = arrayOf("Eggs", "Toast", "Coffee", "")
+    val lunchMenu: Array<String> = arrayOf("Sandwich", "Chips", "Soda", "")
+    val dinnerMenu: Array<String> = arrayOf("Steak", "Potatoes", "Wine", "Cake")
+    var printStack: MutableList<String> = mutableListOf()
+    var errorStack: MutableList<String> = mutableListOf()
+
+
+    /**
+     * Applies the itemization, validation, and 'cooking' of the order.
+     *
+     * @param  order, the user input.
+     * @returns MutableList<String> representing each menu item and it's quantity.
+     */
+    fun waiter(order: String): MutableList<String>{
+        val splitInput = order.split(" ")
 
         /*We can validate at this level that there are two items - (menu, order) */
         if (splitInput.size != 2) {
-            println("Invalid Order: Found more than one menu selection")
-            return
+            printStack.add("Invalid Unable to process. Invalid Order")
+            return printStack
         }
 
         val menu = splitInput[0]
-        val order = splitInput[1].split(",").map { it.toInt() }
-        val orderCounter = createOrderCount(order)
+        val splitOrder = splitInput[1].split(",").map { it.toInt() }
 
-        if (validateOrder(menu, orderCounter) > 0) return
-
-
-        when (menu) {
-            "Breakfast" -> breakfast(orderCounter)
-            "Lunch" -> lunch(orderCounter)
-            "Dinner" -> dinner(orderCounter)
-            else -> {
-                println("lmao what. Well this shit broke")
-                return
-            }
-        }
-    }
-
-    /** All order validation will be migrated to this function to keep other functions DRY */
-    fun validateOrder(menu: String, orderCounter: List<Int>): Int {
-        var errorStack: ArrayList<String> = arrayListOf()
-
-
-        if (orderCounter[0] != 1) errorStack.add("Unable to process: Main is missing")
-        if (orderCounter[1] < 1) errorStack.add("Unable to process: Side is missing")
+        val orderCounter = itemizeOrder(splitOrder)
+        validateOrder(menu, orderCounter)
 
         when (menu) {
-            "Breakfast" -> {
-                if (orderCounter.get(1) > 1) errorStack.add("can't have more than 1 side")
-                if (orderCounter.get(3) > 1) errorStack.add("desert isn't an Option")
-            }
-
-            "Lunch" -> {
-                if (orderCounter.get(3) > 1) errorStack.add("desert isn't an Option")
-            }
-
-            "Dinner" -> {
-                if (orderCounter.get(1) > 1) errorStack.add("can't have more than 1 side")
-                if (orderCounter.get(3) < 1) errorStack.add("desert isn't an Option")
-            }
+            "Breakfast" -> printStack = sendToKitchen(menu, breakfastMenu, orderCounter)
+            "Lunch" -> printStack = sendToKitchen(menu, lunchMenu, orderCounter)
+            "Dinner" -> printStack = sendToKitchen(menu, dinnerMenu, orderCounter)
         }
 
-        println(errorStack)
-        return errorStack.size
+        return printStack
     }
 
-    /** Helper function that formats the order into an itemized list to make it easier to parse **/
-    fun createOrderCount(order: List<Int>): ArrayList<Int> {
-        val orderCounter: ArrayList<Int> = arrayListOf(0, 0, 0, 0) //Main, sides, drinks, desert
+
+    /**
+     * Helper function that formats the order into an itemized list to make it easier to parse.
+     *
+     * @param  order, the user input.
+     * @returns ArrayList<Int> representing the quality of each item.
+     */
+    fun itemizeOrder(order: List<Int>): ArrayList<Int> {
+        val orderCounter: ArrayList<Int> = arrayListOf(0, 0, 0, 0)
         for (n in order) {
             when (n) {
                 1 -> orderCounter[0]++
@@ -78,67 +62,95 @@ class Order() {
                 3 -> orderCounter[2]++
                 4 -> orderCounter[3]++
                 else -> {
-                    println("Aint' a valid order homie")
+                    errorStack.add("Unable to process: Item not available")
                 }
             }
         }
         return orderCounter
     }
 
-    /** Breakfast Logic **/
-    fun breakfast(order: ArrayList<Int>) {
-        val breakfastMenu: Array<String> = arrayOf("Eggs", "Toast", "Coffee")
 
-        var stack = mutableListOf<String>()
+    /**
+     * Makes sure the order is a valid and follows the menu rules.
+     *
+     * @param  menu, the user input.
+     * @param  orderCounter, the itemized order.
+     * @returns MutableList<String> containing any errors found in the order.
+     */
+    fun validateOrder(menu: String, orderCounter: List<Int>): MutableList<String> {
 
-        for (i in 0 until order.size - 1) {
-            if (order.get(i) > 1) stack.add(breakfastMenu.get(i) + "(${order.get(i)})")
-            if (order.get(i) == 1) stack.add(breakfastMenu.get(i))
-            if (order.get(i) == 0) break
+        //standard validation
+        if (orderCounter[0] < 1) errorStack.add("Unable to process: Main is missing")
+        if (orderCounter[0] > 1) errorStack.add("Unable to process: Main can't be ordered more than once")
+        if (orderCounter[1] < 1) errorStack.add("Unable to process: Side is missing")
+
+        //menu based validation
+        when (menu) {
+            "Breakfast" -> {
+                if (orderCounter[1] > 1) errorStack.add("can't have more than 1 side")
+                if (orderCounter[3] > 0) errorStack.add("desert isn't an Option")
+            }
+
+            "Lunch" -> {
+                if (orderCounter[3] > 0) errorStack.add("desert isn't an Option")
+            }
+            "Dinner" -> {
+                if (orderCounter[1] > 1) errorStack.add("can't have more than 1 side")
+                if (orderCounter[3] < 1) errorStack.add("Dessert is missing")
+            }
         }
 
-        println("Final Order: $stack")
+        return errorStack
     }
 
-    /** Lunch Logic **/
-    fun lunch(order: ArrayList<Int>) {
-        //Sandwich, Chips, Soda
-        //At lunch, multiple sides can be ordered
-        val lunchMenu: Array<String> = arrayOf("Sandwich", "Chips", "Soda", "")
 
-        var stack = mutableListOf<String>()
+    /**
+     * Prints the input and output in the correct format.
+     *
+     * @param  input, the user input.
+     */
+    fun getReceipt(input: String){
+        println("In: $input")
+        if(errorStack.isNotEmpty()) println("Out: $errorStack") else println("Out: $printStack")
+    }
 
-        //[1,2,3]
-        for (i in 0..4) {
-            if (order.get(i) > 1) stack.add(lunchMenu.get(i) + "(${order.get(i)})")
-            if (order.get(i) == 1) stack.add(lunchMenu.get(i))
-            if (order.get(i) == 0 && i == 2) stack.add("Water")
-            if (order.get(i) == 0) break
+
+    /**
+     * A cleaner function that clears the order and error lists.
+     */
+    fun cleanTable(){
+        this.errorStack.clear()
+        this.printStack.clear()
+    }
+
+
+    /**
+     * Takes the user inputted order
+     *
+     * @param  menu, the user's menu selection
+     * @param  menuList, the entire restaurant's menu
+     * @param  itemizedOrder, the user's itemized order
+     * @returns MutableList<String> containing the user's order in the finalized format
+     */
+    fun sendToKitchen(menu: String, menuList: Array<String>, itemizedOrder: ArrayList<Int>): MutableList<String> {
+
+        val finishedOrder = mutableListOf<String>()
+
+        for (i in 0..3) { // do it for the 4 items
+            if (itemizedOrder.get(i) > 1) finishedOrder.add(menuList.get(i) + "(${itemizedOrder.get(i)})")
+            if (itemizedOrder.get(i) == 1) finishedOrder.add(menuList.get(i))
+            when(menu){
+                "Breakfast","Lunch" -> {
+                    if (itemizedOrder.get(i) == 0 && i == 2) finishedOrder.add("Water")
+                }
+                "Dinner" -> {
+                    if (i == 2) finishedOrder.add("Water")
+                }
+            }
         }
-
-        println("Final Order: $stack")
+        return finishedOrder
     }
 
-
-    /** Dinner Logic **/
-    fun dinner(order: ArrayList<Int>) {
-        //Steak, Potatoes, Wine, Water, Cake
-        //At dinner, dessert must be ordered
-        //At dinner, water is always provided
-
-        val breakfastMenu: Array<String> = arrayOf("Steak", "Potatoes", "Wine", "Cake")
-
-
-        var stack = mutableListOf<String>()
-
-        //[1,2,3]
-        for (i in 0 until order.size) {
-            if (order.get(i) > 1) stack.add(breakfastMenu.get(i) + "(${order.get(i)})")
-            else stack.add(breakfastMenu.get(i))
-            if (i == 2) stack.add("Water")
-        }
-
-        println("Final Order: $stack")
-    }
 
 }
+
